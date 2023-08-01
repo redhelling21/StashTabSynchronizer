@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from . import oauth
 from confighandler import config as cfg
+from logger import appLogger
 
 class APIToken:
     _instance = None
@@ -10,7 +11,7 @@ class APIToken:
         if conf is not None and "token" in conf:
             yamlToken = conf["token"] # Trigger the constructor
             self.updateTokenWithYaml(yamlToken)
-            print("Loaded token from config")
+            appLogger.info("Loaded token from config : %s", str(yamlToken))
         else:
             self.accessToken = None
             self.expiresOn = datetime.min
@@ -49,12 +50,13 @@ class APIToken:
         conf = cfg.loadConfig()
         conf["token"] = vars(self)
         cfg.dumpConfig(conf)
-        print("Saved token in config")
+        appLogger.info("Saved the token in config")
 
 def get_token():
     token = APIToken()
     if(not token.isExpired()):
         return token
+    appLogger.info("Token is expired or inexistant, requesting a new one")
     newToken = oauth.oauth_process()
     token.updateTokenWithJson(newToken)
     return token

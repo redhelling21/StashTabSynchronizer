@@ -5,7 +5,6 @@ import requests
 API_URL = cfg.loadConfig()["api"]
 
 def getCharacters():
-    print("Getting characters list")
     newToken = token.get_token()
     headers = {
         "Authorization": f"Bearer {newToken.accessToken}",
@@ -17,7 +16,6 @@ def getCharacters():
     return response.json()
 
 def getStashTabsList(league):
-    print("Getting stash tabs list for", league)
     newToken = token.get_token()
     headers = {
         "Authorization": f"Bearer {newToken.accessToken}",
@@ -29,7 +27,6 @@ def getStashTabsList(league):
     return response.json()
 
 def getStashTab(league, id):
-    print("Getting stash tab", id)
     newToken = token.get_token()
     headers = {
         "Authorization": f"Bearer {newToken.accessToken}",
