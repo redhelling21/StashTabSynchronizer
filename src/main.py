@@ -5,7 +5,6 @@ import sys
 systrayHandler = None
 
 def main():
-    
     systrayHandler = systray.run_systray()
     newToken = token.get_token()
     print(newToken)

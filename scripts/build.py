@@ -18,6 +18,8 @@ PyInstaller.__main__.run([
     'src/auth;auth',
     '--add-data',
     'src/systray.py;.',
+    '--add-data',
+    'src/confighandler;confighandler',
     '--icon=assets/logo.ico',
     '--hidden-import=auth',
     '--hidden-import=uuid',
@@ -26,7 +28,11 @@ PyInstaller.__main__.run([
     '--hidden-import=webbrowser',
     '--hidden-import=pystray',
     '--hidden-import=socket',
-    '--hidden-import=PIL.Image'
+    '--hidden-import=PIL.Image',
+    '--hidden-import=os',
+    '--hidden-import=yaml',
+    '--hidden-import=config',
+    '--hidden-import=representers'
 ])
 print("Cleaning...")
 #shutil.rmtree("build")
