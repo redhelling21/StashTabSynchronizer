@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 from . import oauth
-import yaml
+from confighandler import config as cfg
+
 class APIToken:
     _instance = None
 
-    def __init__(self):
+    def __init_once(self):
         conf = cfg.loadConfig()
         if conf is not None and "token" in conf:
             yamlToken = conf["token"] # Trigger the constructor
@@ -19,9 +20,10 @@ class APIToken:
             self.sub = None
             self.refreshToken = None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls):
         if cls._instance is None:
             cls._instance = super(APIToken, cls).__new__(cls)
+            cls._instance.__init_once()
         return cls._instance
     
     def isExpired(self):
@@ -56,5 +58,3 @@ def get_token():
     newToken = oauth.oauth_process()
     token.updateTokenWithJson(newToken)
     return token
-
-from confighandler import config as cfg

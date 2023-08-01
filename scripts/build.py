@@ -32,11 +32,12 @@ PyInstaller.__main__.run([
     '--hidden-import=os',
     '--hidden-import=yaml',
     '--hidden-import=config',
-    '--hidden-import=representers'
+    '--hidden-import=poeApi'
 ])
 print("Cleaning...")
-#shutil.rmtree("build")
+shutil.rmtree("build")
 print("Copying additional resources...")
 os.makedirs("dist/assets", exist_ok=True)
 shutil.copy("assets/logo.png", "dist/assets/logo.png")
-shutil.copy("assets/patch_exilence_handle.cmd", "dist/assets/patch_exilence_handle.cmd")
+shutil.copy("config.yaml", "dist/config.yaml")
+shutil.copy("assets/patch_exilence_handle.cmd", "dist/patch_exilence_handle.cmd")

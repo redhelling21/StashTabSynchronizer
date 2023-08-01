@@ -1,0 +1,12 @@
+api: https://api.pathofexile.com
+availableLeagues:
+- Crucible
+- Hardcore
+- Standard
+league: Crucible
+oauth:
+  authTemplate: https://www.pathofexile.com/oauth/authorize?client_id={CLIENT_ID}&response_type=code&scope={SCOPE}&state={STATE}&redirect_uri={REDIRECT_URI}
+  clientId: exilence
+  redirect: https://next.exilence.app/api/authentication/redirect
+  scope: account:stashes account:profile account:characters
+  tokenTemplate: https://next.exilence.app/api/authentication/oauth2?code={CODE}

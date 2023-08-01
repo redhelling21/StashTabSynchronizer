@@ -2,12 +2,15 @@ import uuid
 import webbrowser
 import socket
 import requests
+from confighandler import config as cfg
 
-CLIENT_ID = "exilence"
-REDIRECT_URI = "https://next.exilence.app/api/authentication/redirect"
-SCOPE = "account:stashes account:profile account:characters"
+conf = cfg.loadConfig()["oauth"]
 STATE = uuid.uuid4()
-AUTH_URL = f"https://www.pathofexile.com/oauth/authorize?client_id={CLIENT_ID}&response_type=code&scope={SCOPE}&state={STATE}&redirect_uri={REDIRECT_URI}"
+SCOPE = conf["scope"]
+REDIRECT_URI = conf["redirect"]
+CLIENT_ID = conf["clientId"]
+AUTH_TEMPLATE = conf["authTemplate"]
+TOKEN_TEMPLATE = conf["tokenTemplate"]
 
 def send_callback_to_main_instance(callback):
     # Create a TCP/IP socket
@@ -49,7 +52,8 @@ def extract_code_and_state(url):
         return None, None
 
 def get_oauth_user_validation():
-    webbrowser.open(AUTH_URL, new=2)
+    authUrl = AUTH_TEMPLATE.format(CLIENT_ID=CLIENT_ID, SCOPE=SCOPE, STATE=STATE, REDIRECT_URI=REDIRECT_URI)
+    webbrowser.open(authUrl, new=2)
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_address = ('localhost', 10000)
     server_socket.bind(server_address)
@@ -71,9 +75,9 @@ def get_oauth_user_validation():
     return extract_code_and_state(data)
 
 def get_new_token(code):
-    token_url = f"https://next.exilence.app/api/authentication/oauth2?code={code}"
-    print("Calling", token_url)
-    response = requests.get(token_url)
+    tokenUrl = TOKEN_TEMPLATE.format(CODE=code)
+    print("Calling", tokenUrl)
+    response = requests.get(tokenUrl)
     if response.status_code != 200:
         print("Failed to retrieve token: ", response.text)
     print("Got the token : ", response.json())
