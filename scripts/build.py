@@ -19,6 +19,8 @@ PyInstaller.__main__.run([
     '--add-data',
     'src/systray.py;.',
     '--add-data',
+    'src/poeApi.py;.',
+    '--add-data',
     'src/confighandler;confighandler',
     '--icon=assets/logo.ico',
     '--hidden-import=auth',
