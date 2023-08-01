@@ -8,9 +8,8 @@ class APIToken:
         conf = cfg.loadConfig()
         if conf is not None and "token" in conf:
             yamlToken = conf["token"] # Trigger the constructor
-            print("Loaded token from config")
             self.updateTokenWithYaml(yamlToken)
-            print("Loaded token :", self.accessToken)
+            print("Loaded token from config")
         else:
             self.accessToken = None
             self.expiresOn = datetime.min
@@ -25,24 +24,12 @@ class APIToken:
             cls._instance = super(APIToken, cls).__new__(cls)
         return cls._instance
     
-    def isExpired(cls):
-        return cls.expiresOn < datetime.now()
-    
-    def api_token_constructor(loader, node):
-        fields = loader.construct_mapping(node)
-        token = APIToken()
-        token.accessToken = fields.get("accessToken")
-        token.expiresOn = datetime.fromisoformat(fields.get("expiresOn"))
-        token.tokenType = fields.get("tokenType")
-        token.scope = fields.get("scope")
-        token.username = fields.get("username")
-        token.sub = fields.get("sub")
-        token.refreshToken = fields.get("refreshToken")
-        return token
+    def isExpired(self):
+        return self.expiresOn < datetime.now()
 
     def updateTokenWithYaml(self, newToken):
         self.accessToken = newToken["accessToken"]
-        self.expiresOn = datetime.strptime(newToken["expiresOn"], "%Y-%m-%dT%H:%M:%S.%f")
+        self.expiresOn = newToken["expiresOn"]
         self.tokenType = newToken["tokenType"]
         self.scope = newToken["scope"]
         self.username = newToken["username"]
