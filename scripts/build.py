@@ -18,6 +18,12 @@ PyInstaller.__main__.run([
     'src/auth;auth',
     '--add-data',
     'src/systray.py;.',
+    '--add-data',
+    'src/poeApi.py;.',
+    '--add-data',
+    'src/confighandler;confighandler',
+    '--add-data',
+    'src/logger.py;.',
     '--icon=assets/logo.ico',
     '--hidden-import=auth',
     '--hidden-import=uuid',
@@ -26,11 +32,22 @@ PyInstaller.__main__.run([
     '--hidden-import=webbrowser',
     '--hidden-import=pystray',
     '--hidden-import=socket',
-    '--hidden-import=PIL.Image'
+    '--hidden-import=PIL.Image',
+    '--hidden-import=os',
+    '--hidden-import=yaml',
+    '--hidden-import=config',
+    '--hidden-import=poeApi',
+    '--hidden-import=logging'
+    '--hidden-import=logger',
+    '--hidden-import=logging.handlers'
 ])
 print("Cleaning...")
-#shutil.rmtree("build")
+shutil.rmtree("build")
 print("Copying additional resources...")
 os.makedirs("dist/assets", exist_ok=True)
+os.makedirs("dist/data", exist_ok=True)
+os.makedirs("dist/logs", exist_ok=True)
 shutil.copy("assets/logo.png", "dist/assets/logo.png")
-shutil.copy("assets/patch_exilence_handle.cmd", "dist/assets/patch_exilence_handle.cmd")
+shutil.copy("assets/logo.ico", "dist/assets/logo.ico")
+shutil.copy("config.yaml", "dist/config.yaml")
+shutil.copy("assets/patch_exilence_handle.cmd", "dist/patch_exilence_handle.cmd")
