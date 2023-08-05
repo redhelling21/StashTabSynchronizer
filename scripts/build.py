@@ -47,6 +47,7 @@ PyInstaller.__main__.run(
 )
 print("Cleaning...")
 shutil.rmtree("build")
+shutil.rmtree("dist/data")
 print("Copying additional resources...")
 os.makedirs("dist/assets", exist_ok=True)
 os.makedirs("dist/data", exist_ok=True)
