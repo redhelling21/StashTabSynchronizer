@@ -9,7 +9,7 @@ class APIToken:
     def __init_once(self):
         conf = cfg.loadConfig()
         if conf is not None and "token" in conf:
-            yamlToken = conf["token"] # Trigger the constructor
+            yamlToken = conf["token"]
             self.updateTokenWithYaml(yamlToken)
             appLogger.info("Loaded token from config : %s", str(yamlToken))
         else:

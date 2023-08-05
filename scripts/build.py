@@ -24,6 +24,8 @@ PyInstaller.__main__.run([
     'src/confighandler;confighandler',
     '--add-data',
     'src/logger.py;.',
+    '--add-data',
+    'src/stashFormatter.py;.',
     '--icon=assets/logo.ico',
     '--hidden-import=auth',
     '--hidden-import=uuid',
@@ -39,7 +41,8 @@ PyInstaller.__main__.run([
     '--hidden-import=poeApi',
     '--hidden-import=logging'
     '--hidden-import=logger',
-    '--hidden-import=logging.handlers'
+    '--hidden-import=logging.handlers',
+    '--hidden-import=re'
 ])
 print("Cleaning...")
 shutil.rmtree("build")
