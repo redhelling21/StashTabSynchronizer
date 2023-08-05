@@ -8,9 +8,10 @@ fieldHandlers = {
     "properties": lambda item, value: propertiesHandler(item, value),
     "requirements": lambda item, value: requirementsHandler(item, value),
     "frameType": lambda item, value: rarityHandler(item, value),
+    "additionalProperties": lambda item, value: propertiesHandler(item, value),
 }
 
-removeList = ["verified", "w", "h", "typeLine", "x", "y", "inventoryId"]
+removeList = ["verified", "w", "h", "x", "y", "inventoryId", "socketedItems"]
 
 
 def socketsHandler(item, value):
@@ -20,15 +21,33 @@ def socketsHandler(item, value):
     item["sockets.green"] = sum(1 for socket in value if socket["sColour"] == "G")
     item["sockets.blue"] = sum(1 for socket in value if socket["sColour"] == "B")
     item["sockets.white"] = sum(1 for socket in value if socket["sColour"] == "W")
-    item["links"] = total - max(value, key=lambda x: x["group"])["group"] + 1
+    item["links"] = total - max(value, key=lambda x: x["group"])["group"]
+
+
+def nameHandler(item):
+    if item.get("name") and item["name"] == "":
+        if item.get("typeLine"):
+            item["name"] = item["typeLine"]
+        elif item.get("baseType"):
+            item["name"] = item["baseType"]
+            item["typeLine"] = item["baseType"]
+
+
+def stackSizeHandler(item):
+    if item.get("stackSize") is not None and item.get("properties.StackSize") is None:
+        item["properties.StackSize"] = f"{item.get('stackSize')}/{item.get('maxStackSize')}"
+    elif item.get("stackSize") is None and item.get("properties.StackSize") is not None:
+        stackSizeDatas = item.get("properties.StackSize").split("/")
+        item["stackSize"] = int(stackSizeDatas[0])
+        item["maxStackSize"] = int(stackSizeDatas[1])
 
 
 def propertiesHandler(item, value):
     for prop in value:
         if prop["values"]:
             name = prop["name"]
-            newKey = f"{re.sub(r'[^a-zA-Z]', '', name.lower().replace(' ', ''))}"
-            item[newKey] = prop["values"][0][0]
+            newKey = f"{re.sub(r'[^a-zA-Z]', '', name.replace(' ', ''))}"
+            item[f"properties.{newKey}"] = prop["values"][0][0]
 
 
 def requirementsHandler(item, value):
@@ -54,7 +73,6 @@ def rarityHandler(item, value):
 
 def mapStashHandler(league, stash, children):
     method = cfg.loadConfig().get("specialStashesHandling").get("map")
-    api = POEApi()
     items = list()
     if method is None or method == "partial":
         appLogger.debug("Handling map stash with partial data recovery")
@@ -65,13 +83,13 @@ def mapStashHandler(league, stash, children):
             item["league"] = league
             item["baseType"] = metadata["map"]["name"]
             item["name"] = metadata["map"]["name"]
-            item["stackSize"] = metadata["items"]
+            item["properties.StackSize"] = f"{metadata['items']}/999"
             if metadata["map"].get("tier"):
                 item["tier"] = metadata["map"]["tier"]
-                item["properties.maptier"] = metadata["map"]["tier"]
+                item["properties.MapTier"] = metadata["map"]["tier"]
             else:
                 item["tier"] = 16
-                item["properties.maptier"] = 16
+                item["properties.MapTier"] = 16
             if metadata["map"]["section"] == "unique":
                 item["rarity"] = "unique"
             elif metadata["map"]["section"] == "special":
@@ -81,12 +99,8 @@ def mapStashHandler(league, stash, children):
             items.append(item)
         return items
     elif method == "full":
-        appLogger.info("Handling map stash with full data recovery (switch to partial, you idiot)")
-        for child in children:
-            appLogger.debug(f"Querying child {stash['id']}/{child['id']}")
-            childStash = api.getStashTab(league, f"{stash['id']}/{child['id']}")
-            items = items + childStash["stash"]["items"]
-        return items
+        appLogger.info("Handling map stash with full data recovery is not supported, as it takes around 20 minutes by itself")
+        return None
     elif method == "skip":
         appLogger.info("Skipping map tab")
         return None
@@ -153,6 +167,7 @@ def getFormattedStash(json, owner, league):
                 fieldHandlers[key](formattedItem, item[key])
             else:
                 defaultHandler(formattedItem, key, item[key])
+        nameHandler(formattedItem)
         formattedItems.append(formattedItem)
     stash["items"] = formattedItems
     return stash
