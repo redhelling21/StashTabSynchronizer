@@ -1,8 +1,8 @@
 api: https://api.pathofexile.com
 availableLeagues:
-- Standard
-- Crucible
-- Hardcore
+  - Standard
+  - Crucible
+  - Hardcore
 league: Crucible
 oauth:
   authTemplate: https://www.pathofexile.com/oauth/authorize?client_id={CLIENT_ID}&response_type=code&scope={SCOPE}&state={STATE}&redirect_uri={REDIRECT_URI}

@@ -1,4 +1,4 @@
-from auth import oauth, token
+from auth import oauth
 import systray
 import sys
 from poeApi import POEApi
@@ -12,6 +12,7 @@ import stashFormatter
 
 systrayHandler = None
 
+
 def startup():
     systrayHandler = systray.run_systray()
     profile = getProfile()
@@ -22,6 +23,7 @@ def startup():
         loop(selectedLeague, stashIds, profile["name"])
     else:
         return
+
 
 def loop(league, stashIds, owner):
     api = POEApi()
@@ -37,10 +39,12 @@ def loop(league, stashIds, owner):
         appLogger.info("Sleeping for 600 seconds")
         time.sleep(600)
 
+
 def getProfile():
     api = POEApi()
     appLogger.debug("Retrieving the profile")
     return api.getProfile()
+
 
 def getLeagues():
     api = POEApi()
@@ -57,6 +61,7 @@ def getLeagues():
     appLogger.info("Retrieved the available leagues list : %s", str(leagues))
     return leagues
 
+
 def getStashIds(league):
     api = POEApi()
     appLogger.debug("Retrieving the stashes list for %s", league)
@@ -64,17 +69,20 @@ def getStashIds(league):
     stashIds = {}
     for stash in stashes:
         children = stash.get("children")
-        if(children): # Handle stash folders
+        if children:  # Handle stash folders
             for child in children:
                 id = child.get("id")
-                if id: stashIds[id] = f"{stash.get('name')}.{child.get('name')}"
+                if id:
+                    stashIds[id] = f"{stash.get('name')}.{child.get('name')}"
         else:
             id = stash.get("id")
-            if id: stashIds[id] = stash.get('name')
+            if id:
+                stashIds[id] = stash.get("name")
     appLogger.info("Retrieved the available stashes list for %s : %s", str(league), str(stashIds))
     return stashIds
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     if len(sys.argv) == 1:
         appLogger.info("Starting the tool")
         startup()

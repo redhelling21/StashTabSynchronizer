@@ -3,6 +3,7 @@ from . import oauth
 from confighandler import config as cfg
 from logger import appLogger
 
+
 class APIToken:
     _instance = None
 
@@ -26,7 +27,7 @@ class APIToken:
             cls._instance = super(APIToken, cls).__new__(cls)
             cls._instance.__init_once()
         return cls._instance
-    
+
     def isExpired(self):
         return self.expiresOn < datetime.now()
 
@@ -52,9 +53,10 @@ class APIToken:
         cfg.dumpConfig(conf)
         appLogger.info("Saved the token in config")
 
+
 def get_token():
     token = APIToken()
-    if(not token.isExpired()):
+    if not token.isExpired():
         return token
     appLogger.info("Token is expired or inexistant, requesting a new one")
     newToken = oauth.oauth_process()

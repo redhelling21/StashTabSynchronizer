@@ -1,5 +1,4 @@
 import re
-import poeApi
 from collections import defaultdict
 from logger import appLogger
 from poeApi import POEApi
@@ -13,6 +12,7 @@ fieldHandlers = {
 
 removeList = ["verified", "w", "h", "typeLine", "x", "y", "inventoryId"]
 
+
 def socketsHandler(item, value):
     total = sum(1 for socket in value)
     item["sockets.number"] = total
@@ -22,12 +22,14 @@ def socketsHandler(item, value):
     item["sockets.white"] = sum(1 for socket in value if socket["sColour"] == "W")
     item["links"] = total - max(value, key=lambda x: x["group"])["group"] + 1
 
+
 def propertiesHandler(item, value):
     for prop in value:
         if prop["values"]:
             name = prop["name"]
             newKey = f"{re.sub(r'[^a-zA-Z]', '', name.lower().replace(' ', ''))}"
             item[newKey] = prop["values"][0][0]
+
 
 def requirementsHandler(item, value):
     for prop in value:
@@ -36,21 +38,24 @@ def requirementsHandler(item, value):
             newKey = f"requirements.{re.sub(r'[^a-zA-Z]', '', name.lower().replace(' ', ''))}"
             item[newKey] = prop["values"][0][0]
 
+
 def rarityHandler(item, value):
-    if value == 0 :
+    if value == 0:
         item["rarity"] = "normal"
-    elif value == 1 :
+    elif value == 1:
         item["rarity"] = "magic"
-    elif value == 2 :
+    elif value == 2:
         item["rarity"] = "rare"
-    elif value == 3 :
+    elif value == 3:
         item["rarity"] = "unique"
+
 
 def mapTabHandler(items):
     base_type_counts = defaultdict(int)
     for item in items:
         base_type = item.get("baseType")
-        if base_type: base_type_counts[base_type] += 1
+        if base_type:
+            base_type_counts[base_type] += 1
 
     # Store the first occurrence of each "baseType" and add the count as a new field
     unique_items = []
@@ -63,10 +68,12 @@ def mapTabHandler(items):
             base_type_counts[base_type] = 0
     return unique_items
 
+
 def defaultHandler(item, key, value):
     if key not in removeList:
         item[key] = value
     return
+
 
 def getFormattedStash(json, owner, league):
     api = POEApi()
