@@ -4,6 +4,10 @@ availableLeagues:
   - Crucible
   - Hardcore
 league: Crucible
+specialStashesHandling:
+  unique: full
+  # Don't switch to full
+  map: partial
 oauth:
   authTemplate: https://www.pathofexile.com/oauth/authorize?client_id={CLIENT_ID}&response_type=code&scope={SCOPE}&state={STATE}&redirect_uri={REDIRECT_URI}
   clientId: exilence

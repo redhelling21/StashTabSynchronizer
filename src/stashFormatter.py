@@ -1,7 +1,7 @@
 import re
-from collections import defaultdict
 from logger import appLogger
 from poeApi import POEApi
+from confighandler import config as cfg
 
 fieldHandlers = {
     "sockets": lambda item, value: socketsHandler(item, value),
@@ -48,25 +48,73 @@ def rarityHandler(item, value):
         item["rarity"] = "rare"
     elif value == 3:
         item["rarity"] = "unique"
+    else:
+        item["rarity"] = "special"
 
 
-def mapTabHandler(items):
-    base_type_counts = defaultdict(int)
-    for item in items:
-        base_type = item.get("baseType")
-        if base_type:
-            base_type_counts[base_type] += 1
+def mapStashHandler(league, stash, children):
+    method = cfg.loadConfig().get("specialStashesHandling").get("map")
+    api = POEApi()
+    items = list()
+    if method is None or method == "partial":
+        appLogger.debug("Handling map stash with partial data recovery")
+        for child in children:
+            item = {}
+            metadata = child["metadata"]
+            item["icon"] = metadata["map"]["image"]
+            item["league"] = league
+            item["baseType"] = metadata["map"]["name"]
+            item["name"] = metadata["map"]["name"]
+            item["stackSize"] = metadata["items"]
+            if metadata["map"].get("tier"):
+                item["tier"] = metadata["map"]["tier"]
+                item["properties.maptier"] = metadata["map"]["tier"]
+            else:
+                item["tier"] = 16
+                item["properties.maptier"] = 16
+            if metadata["map"]["section"] == "unique":
+                item["rarity"] = "unique"
+            elif metadata["map"]["section"] == "special":
+                item["rarity"] = "special"
+            else:
+                item["rarity"] = "normal"
+            items.append(item)
+        return items
+    elif method == "full":
+        appLogger.info("Handling map stash with full data recovery (switch to partial, you idiot)")
+        for child in children:
+            appLogger.debug(f"Querying child {stash['id']}/{child['id']}")
+            childStash = api.getStashTab(league, f"{stash['id']}/{child['id']}")
+            items = items + childStash["stash"]["items"]
+        return items
+    elif method == "skip":
+        appLogger.info("Skipping map tab")
+        return None
+    else:
+        appLogger.error("specialStashesHandling.map has an unknown value")
+        return None
 
-    # Store the first occurrence of each "baseType" and add the count as a new field
-    unique_items = []
-    for item in items:
-        base_type = item.get("baseType")
-        if base_type and base_type_counts[base_type] > 0:
-            unique_item = item.copy()
-            unique_item["stackSize"] = base_type_counts[base_type]
-            unique_items.append(unique_item)
-            base_type_counts[base_type] = 0
-    return unique_items
+
+def uniqueStashHandler(league, stash, children):
+    method = cfg.loadConfig().get("specialStashesHandling").get("unique")
+    api = POEApi()
+    items = list()
+    if method is None or method == "partial":
+        appLogger.error("Partial mode not supported for unique stash tab")
+        return None
+    elif method == "full":
+        appLogger.info("Handling unique stash with full data recovery")
+        for child in children:
+            appLogger.debug(f"Querying child {stash['id']}/{child['id']}")
+            childStash = api.getStashTab(league, f"{stash['id']}/{child['id']}")
+            items = items + childStash["stash"]["items"]
+        return items
+    elif method == "skip":
+        appLogger.info("Skipping unique tab")
+        return None
+    else:
+        appLogger.error("specialStashesHandling.unique has an unknown value")
+        return None
 
 
 def defaultHandler(item, key, value):
@@ -78,20 +126,23 @@ def defaultHandler(item, key, value):
 def getFormattedStash(json, owner, league):
     api = POEApi()
     stash = json["stash"]
+    items = list()
     children = stash.get("children")
     if children:
-        appLogger.debug("Detected children, retrieving substashes")
-        items = list()
-        for child in children:
-            appLogger.debug(f"Querying child {stash['id']}/{child['id']}")
-            childStash = api.getStashTab(league, f"{stash['id']}/{child['id']}")
-            items = items + childStash["stash"]["items"]
-        if stash["type"] == "MapStash":
-            items = mapTabHandler(items)
+        if stash.get("type") == "MapStash":
+            items = mapStashHandler(league, stash, children)
+        elif stash.get("type") == "UniqueStash":
+            items = uniqueStashHandler(league, stash, children)
+        else:
+            appLogger.debug("Detected children from an unknown stash type, retrieving substashes")
+            for child in children:
+                appLogger.debug(f"Querying child {stash['id']}/{child['id']}")
+                childStash = api.getStashTab(league, f"{stash['id']}/{child['id']}")
+                items = items + childStash["stash"]["items"]
         del stash["children"]
     else:
         items = stash["items"]
-    del stash["items"]
+        del stash["items"]
     formattedItems = list()
     for item in items:
         formattedItem = {}
