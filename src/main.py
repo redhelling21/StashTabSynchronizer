@@ -30,12 +30,21 @@ def loop(league, stashIds, owner):
     while True:
         appLogger.info("Retrieving the stash tabs datas")
         for id in stashIds:
+            appLogger.debug("Querying the stash %s, with id %s", stashIds[id], id)
             stash = api.getStashTab(league, id)
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             filename = f"{stashIds[id]}_{timestamp}.json"
-            with open(f"{os.path.dirname(sys.argv[0])}/data/{filename}", "w") as file:
-                json.dump(stashFormatter.getFormattedStash(stash, owner, league), file)
-            appLogger.info("Saved the '%s' tab data in %s", stashIds[id], filename)
+            try:
+                formattedStash = stashFormatter.getFormattedStash(stash, owner, league)
+            except Exception as e:
+                appLogger.exception("An exception occurred while formatting stash: %s", str(e))
+                formattedStash = None
+            if formattedStash is not None:
+                with open(f"{os.path.dirname(sys.argv[0])}/data/{filename}", "w") as file:
+                    json.dump(formattedStash, file)
+                appLogger.info("Saved the '%s' tab data in %s", stashIds[id], filename)
+            else:
+                appLogger.info("Stash '%s' was empty, skipping", stashIds[id])
         appLogger.info("Sleeping for 600 seconds")
         time.sleep(600)
 
