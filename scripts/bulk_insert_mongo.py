@@ -22,7 +22,7 @@ for file_name in json_files:
 
     with open(file_path, "r") as file:
         data = json.load(file)
-        collection.insert_one(data)
+        collection.insert_many(data)
 
 # Step 5: Close the MongoDB connection
 client.close()
