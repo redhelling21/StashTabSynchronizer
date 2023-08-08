@@ -2,13 +2,18 @@ import re
 from logger import appLogger
 from poeApi import POEApi
 from confighandler import config as cfg
+from datetime import datetime
 
 fieldHandlers = {
-    "sockets": lambda item, value: socketsHandler(item, value),
-    "properties": lambda item, value: propertiesHandler(item, value),
-    "requirements": lambda item, value: requirementsHandler(item, value),
-    "frameType": lambda item, value: rarityHandler(item, value),
-    "additionalProperties": lambda item, value: propertiesHandler(item, value),
+    "sockets": lambda item, value: sockets_handler(item, value),
+    "properties": lambda item, value: nested_values_handler(item, value, "comparableProperties", "searchableProperties", handle_special_properties),
+    "requirements": lambda item, value: nested_values_handler(
+        item, value, "comparableRequirements", "searchableRequirements", handle_special_requirements
+    ),
+    "frameType": lambda item, value: rarity_handler(item, value),
+    "additionalProperties": lambda item, value: nested_values_handler(
+        item, value, "comparableProperties", "searchableProperties", handle_special_properties
+    ),
 }
 
 removeList = [
@@ -29,7 +34,7 @@ removeList = [
 ]
 
 
-def socketsHandler(item, value):
+def sockets_handler(item, value):
     total = len(value)
     item["sockets"] = {}
     item["sockets"]["number"] = total
@@ -41,7 +46,7 @@ def socketsHandler(item, value):
     item["links"] = total - max(value, key=lambda x: x["group"])["group"]
 
 
-def nameHandler(item):
+def name_handler(item):
     if item.get("name") and item["name"] == "":
         if item.get("typeLine"):
             item["name"] = item["typeLine"]
@@ -50,41 +55,68 @@ def nameHandler(item):
             item["typeLine"] = item["baseType"]
 
 
-def stackSizeHandler(item):
-    if item.get("stackSize") is not None:
-        if item.get("properties") is None:
-            item["properties"] = {}
-        item["properties"]["StackSize"] = f"{item.get('stackSize')}/{item.get('maxStackSize')}"
-    elif item.get("stackSize") is None and item.get("properties") is not None and item.get("properties").get("StackSize") is not None:
-        stackSizeDatas = item["properties"]["StackSize"].split("/")
-        item["stackSize"] = int(stackSizeDatas[0])
-        item["maxStackSize"] = int(stackSizeDatas[1])
+def handle_special_requirements(item, prop):
+    return False
 
 
-def propertiesHandler(item, value):
-    if item.get("properties") is None:
-        item["properties"] = {}
+def handle_special_properties(item, prop):
+    if prop["name"] == "Stack Size":
+        return True
+    elif prop["name"] == "Experience":
+        return True
+    else:
+        return False
+
+
+def nested_values_handler(item, value, comparableCatName, searchableCatName, handleSpecialCases):
+    if item.get(comparableCatName) is None:
+        item[comparableCatName] = list()
+    if item.get(searchableCatName) is None:
+        item[searchableCatName] = list()
     for prop in value:
+        # Check proper format
         if isinstance(prop, dict) and prop.get("values") is not None:
-            name = prop["name"]
-            newKey = f"{re.sub(r'[^a-zA-Z]', '', name.replace(' ', ''))}"
-            if prop["values"]:
-                item["properties"][newKey] = prop["values"][0][0]
+            if handleSpecialCases(item, prop):
+                continue
+            newReq = {}
+            newReq["name"], count = re.subn(r"{\d+}", "X", prop["name"])
+            # Case where there is only zero/one value
+            if count <= 1:
+                if prop["values"]:
+                    isNumber, parsedNumber = try_parse_string_value_as_number(prop["values"][0][0])
+                    if isNumber:
+                        newReq["value"] = parsedNumber
+                        item[comparableCatName].append(newReq)
+                    else:
+                        newReq["value"] = prop["values"][0][0]
+                        item[searchableCatName].append(newReq)
+                # Case where there is zero value
+                else:
+                    newReq["value"] = newReq["name"]
+                    item[searchableCatName].append(newReq)
+            # Case where there is two values
             else:
-                item["properties"][newKey] = "true"
+                isFirstNumber, parsedFirstNumber = try_parse_string_value_as_number(prop["values"][0][0])
+                isSecNumber, parsedSecNumber = try_parse_string_value_as_number(prop["values"][1][0])
+                # TODO : handle the case with two numbers
+                newReq["value"] = prop["values"][0][0] + " - " + prop["values"][1][0]
+                item[searchableCatName].append(newReq)
 
 
-def requirementsHandler(item, value):
-    if item.get("requirements") is None:
-        item["requirements"] = {}
-    for prop in value:
-        if isinstance(prop, dict) and prop.get("values") is not None:
-            name = prop["name"]
-            newKey = re.sub(r"[^a-zA-Z]", "", name.lower().replace(" ", ""))
-            item["requirements"][newKey] = prop["values"][0][0]
+def try_parse_string_value_as_number(value):
+    if is_number(value):
+        return True, float(value)
+    substrings_to_remove = [" sec", " Mana", "%"]
+    cleanedValue = remove_substrings(value, substrings_to_remove)
+    if is_number(cleanedValue):
+        return True, float(cleanedValue)
+    splitValue = cleanedValue.split("-")
+    if len(splitValue) == 2 and is_number(splitValue[0]) and is_number(splitValue[1]):
+        return True, (float(splitValue[0]) + float(splitValue[1])) / 2
+    return False, None
 
 
-def rarityHandler(item, value):
+def rarity_handler(item, value):
     if value == 0:
         item["rarity"] = "normal"
     elif value == 1:
@@ -97,7 +129,7 @@ def rarityHandler(item, value):
         item["rarity"] = "special"
 
 
-def mapStashHandler(league, stash, children):
+def map_stash_handler(league, stash, children):
     method = cfg.loadConfig().get("specialStashesHandling").get("map")
     items = list()
     if method is None or method == "partial":
@@ -109,15 +141,18 @@ def mapStashHandler(league, stash, children):
             item["league"] = league
             item["baseType"] = metadata["map"]["name"]
             item["name"] = metadata["map"]["name"]
-            if item.get("properties") is None:
-                item["properties"] = {}
-            item["properties"]["StackSize"] = f"{metadata['items']}/999"
+            if item.get("comparableProperties") is None:
+                item["comparableProperties"] = list()
+            if item.get("searchableProperties") is None:
+                item["searchableProperties"] = list()
+            item["stackSize"] = int(metadata["items"])
+            item["maxStackSize"] = 999
             if metadata["map"].get("tier"):
                 item["tier"] = metadata["map"]["tier"]
-                item["properties"]["MapTier"] = metadata["map"]["tier"]
+                item["comparableProperties"].append({"name": "Map Tier", "value": int(metadata["map"]["tier"])})
             else:
                 item["tier"] = 16
-                item["properties"]["MapTier"] = 16
+                item["comparableProperties"].append({"name": "Map Tier", "value": 16})
             if metadata["map"]["section"] == "unique":
                 item["rarity"] = "unique"
             elif metadata["map"]["section"] == "special":
@@ -137,7 +172,7 @@ def mapStashHandler(league, stash, children):
         return None
 
 
-def uniqueStashHandler(league, stash, children):
+def unique_stash_handler(league, stash, children):
     method = cfg.loadConfig().get("specialStashesHandling").get("unique")
     api = POEApi()
     items = list()
@@ -159,7 +194,7 @@ def uniqueStashHandler(league, stash, children):
         return None
 
 
-def defaultHandler(item, key, value):
+def default_handler(item, key, value):
     if key not in removeList:
         item[key] = value
     return
@@ -168,15 +203,14 @@ def defaultHandler(item, key, value):
 def getFormattedStash(json, owner, league):
     api = POEApi()
     stash = json["stash"]
-    if stash.get("metadata"):
-        del stash["metadata"]
     items = list()
     children = stash.get("children")
+    # Case where the stash has children
     if children:
         if stash.get("type") == "MapStash":
-            items = mapStashHandler(league, stash, children)
+            items = map_stash_handler(league, stash, children)
         elif stash.get("type") == "UniqueStash":
-            items = uniqueStashHandler(league, stash, children)
+            items = unique_stash_handler(league, stash, children)
         else:
             appLogger.debug("Detected children from an unknown stash type, retrieving substashes")
             for child in children:
@@ -184,29 +218,42 @@ def getFormattedStash(json, owner, league):
                 childStash = api.getStashTab(league, f"{stash['id']}/{child['id']}")
                 items = items + childStash["stash"]["items"]
         del stash["children"]
+    # Case where the stash has items
     elif stash.get("items") is not None:
         items = stash["items"]
         del stash["items"]
     else:
         return None
+    timestamp = datetime.now().strftime("%Y-%m-%dT%H%M%S")
     formattedItems = list()
     for item in items:
         try:
             formattedItem = {}
-            formattedItem["stashName"] = stash["name"]
-            formattedItem["owner"] = owner
+            formattedItem["timestamp"] = timestamp
+            formattedItem["stash"] = {}
+            formattedItem["stash"]["name"] = stash["name"]
+            formattedItem["stash"]["id"] = stash["id"]
+            formattedItem["stash"]["owner"] = owner
             for key in item:
                 if key in fieldHandlers:
                     fieldHandlers[key](formattedItem, item[key])
                 else:
-                    defaultHandler(formattedItem, key, item[key])
-            nameHandler(formattedItem)
-            stackSizeHandler(formattedItem)
+                    default_handler(formattedItem, key, item[key])
+            name_handler(formattedItem)
             formattedItems.append(formattedItem)
         except Exception as e:
             appLogger.exception("An exception occurred while formatting item %s : %s", item, str(e))
+    return formattedItems
 
-    stash["items"] = formattedItems
-    stash["IdStashTab"] = stash["id"]
-    del stash["id"]
-    return stash
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
+def remove_substrings(text, substrings):
+    pattern = "|".join(map(re.escape, substrings))
+    return re.sub(pattern, "", text)
