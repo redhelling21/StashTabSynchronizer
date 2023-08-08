@@ -207,4 +207,6 @@ def getFormattedStash(json, owner, league):
             appLogger.exception("An exception occurred while formatting item %s : %s", item, str(e))
 
     stash["items"] = formattedItems
+    stash["IdStashTab"] = stash["id"]
+    del stash["id"]
     return stash
