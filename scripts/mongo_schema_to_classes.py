@@ -50,7 +50,7 @@ def create_property(field):
     if typename == "object":
         if prop["name"] not in classesToCreate:
             classesToCreate[prop["name"]] = {"name": prop["name"], "properties": list()}
-        for subItem in field["subItems"]:
+        for subItem in field.get("subItems", []):
             classesToCreate[prop["name"]]["properties"].append(create_property(subItem))
         typename = capitalize_first_letter(prop["name"])
 
@@ -58,7 +58,7 @@ def create_property(field):
         if "subItems" in field:
             if prop["name"] not in classesToCreate:
                 classesToCreate[prop["name"]] = {"name": f"{prop['name']}Content", "properties": list()}
-            for subItem in field["subItems"]:
+            for subItem in field.get("subItems", []):
                 classesToCreate[prop["name"]]["properties"].append(create_property(subItem))
             typename = f"List<{capitalize_first_letter(prop['name'])}Content>"
         else:
