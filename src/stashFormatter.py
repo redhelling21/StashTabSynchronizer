@@ -14,6 +14,13 @@ fieldHandlers = {
     "additionalProperties": lambda item, value: nested_values_handler(
         item, value, "comparableProperties", "searchableProperties", handle_special_properties
     ),
+    "enchantMods": lambda item, value: mod_values_handler(item, value, "comparableEnchantMods", "searchableEnchantMods"),
+    "explicitMods": lambda item, value: mod_values_handler(item, value, "comparableExplicitMods", "searchableExplicitMods"),
+    "implicitMods": lambda item, value: mod_values_handler(item, value, "comparableImplicitMods", "searchableImplicitMods"),
+    "utilityMods": lambda item, value: mod_values_handler(item, value, "comparableUtilityMods", "searchableUtilityMods"),
+    "craftedMods": lambda item, value: mod_values_handler(item, value, "comparableCraftedMods", "searchableCraftedMods"),
+    "fracturedMods": lambda item, value: mod_values_handler(item, value, "comparableFracturedMods", "searchableFracturedMods"),
+    "veiledMods": lambda item, value: mod_values_handler(item, value, "comparableVeiledMods", "searchableVeiledMods"),
 }
 
 removeList = [
@@ -101,6 +108,37 @@ def nested_values_handler(item, value, comparableCatName, searchableCatName, han
                 # TODO : handle the case with two numbers
                 newReq["value"] = prop["values"][0][0] + " - " + prop["values"][1][0]
                 item[searchableCatName].append(newReq)
+
+
+def mod_values_handler(item, value, comparableCatName, searchableCatName):
+    if item.get(comparableCatName) is None:
+        item[comparableCatName] = list()
+    if item.get(searchableCatName) is None:
+        item[searchableCatName] = list()
+    for prop in value:
+        # Check proper format
+        newMod = {}
+        pattern = r"\b\d+\b"
+        # Find all matches of the pattern in the input string
+        numbers = re.findall(pattern, prop)
+        newProp = prop
+        for number in numbers:
+            newProp = newProp.replace(number, "X", 1)
+        newMod["name"] = newProp
+        if len(numbers) == 0:
+            newMod["value"] = newProp
+            item[searchableCatName].append(newMod)
+        elif len(numbers) == 1:
+            if is_number(numbers[0]):
+                newMod["value"] = float(numbers[0])
+                item[comparableCatName].append(newMod)
+            else:
+                newMod["value"] = numbers[0]
+                item[searchableCatName].append(newMod)
+        else:
+            separator = " - "
+            newMod["value"] = separator.join(numbers)
+            item[searchableCatName].append(newMod)
 
 
 def try_parse_string_value_as_number(value):
@@ -194,6 +232,19 @@ def unique_stash_handler(league, stash, children):
         return None
 
 
+def empty_fields_handler(item):
+    toDelete = list()
+    for key in item:
+        if isinstance(item[key], str) and item[key] == "":
+            toDelete.append(key)
+        elif isinstance(item[key], dict) and item[key] == {}:
+            toDelete.append(key)
+        elif isinstance(item[key], list) and item[key] == []:
+            toDelete.append(key)
+    for key in toDelete:
+        del item[key]
+
+
 def default_handler(item, key, value):
     if key not in removeList:
         item[key] = value
@@ -240,6 +291,7 @@ def getFormattedStash(json, owner, league):
                 else:
                     default_handler(formattedItem, key, item[key])
             name_handler(formattedItem)
+            empty_fields_handler(formattedItem)
             formattedItems.append(formattedItem)
         except Exception as e:
             appLogger.exception("An exception occurred while formatting item %s : %s", item, str(e))
