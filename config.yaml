@@ -14,3 +14,6 @@ oauth:
   redirect: https://next.exilence.app/api/authentication/redirect
   scope: account:stashes account:profile account:characters
   tokenTemplate: https://next.exilence.app/api/authentication/oauth2?code={CODE}
+export:
+  mode: local
+  endpoint: data

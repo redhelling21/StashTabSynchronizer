@@ -38,6 +38,7 @@ removeList = [
     "nextLevelRequirements",
     "hybrid",
     "incubatedItem",
+    "flavourTextParsed",
 ]
 
 

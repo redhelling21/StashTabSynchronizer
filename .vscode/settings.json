@@ -4,5 +4,8 @@
         "titleBar.inactiveForeground": "#ffffff",
         "titleBar.activeBackground": "#1177c5",
         "titleBar.inactiveBackground": "#1177c5"
-	}
+    },
+    "black-formatter.args": [
+        "--line-length=150"
+    ]
 }

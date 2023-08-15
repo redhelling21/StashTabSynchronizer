@@ -9,53 +9,60 @@ import json
 import os
 from logger import appLogger, subLogger
 import stashFormatter
+import requests
 
 systrayHandler = None
 
 
 def startup():
     systrayHandler = systray.run_systray()
-    profile = getProfile()
-    leagues = getLeagues()
+    profile = get_profile()
+    leagues = get_leagues()
     selectedLeague = cfg.loadConfig().get("league")
     if selectedLeague is not None and selectedLeague in leagues:
-        stashIds = getStashIds(selectedLeague)
+        appLogger.info("Running with league : " + selectedLeague)
+        stashIds = get_stash_ids(selectedLeague)
         loop(selectedLeague, stashIds, profile["name"])
     else:
+        appLogger.info("No selected league. Exiting...")
         return
 
 
 def loop(league, stashIds, owner):
     api = POEApi()
+    conf = cfg.loadConfig()
+    if conf["export"]["mode"] == "local":
+        stashExport = write_stash_to_file
+    elif conf["export"]["mode"] == "server":
+        stashExport = send_stash_to_server
+    else:
+        appLogger.info("Invalid export mode. Exiting...")
+        return
     while True:
         appLogger.info("Retrieving the stash tabs datas")
         for id in stashIds:
             appLogger.debug("Querying the stash %s, with id %s", stashIds[id], id)
             stash = api.getStashTab(league, id)
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            filename = f"{stashIds[id]}_{timestamp}.json"
             try:
                 formattedStash = stashFormatter.getFormattedStash(stash, owner, league)
             except Exception as e:
                 appLogger.exception("An exception occurred while formatting stash: %s", str(e))
                 formattedStash = None
             if formattedStash is not None:
-                with open(f"{os.path.dirname(sys.argv[0])}/data/{filename}", "w") as file:
-                    json.dump(formattedStash, file)
-                appLogger.info("Saved the '%s' tab data in %s", stashIds[id], filename)
+                stashExport(formattedStash)
             else:
                 appLogger.info("Stash '%s' was empty, skipping", stashIds[id])
         appLogger.info("Sleeping for 600 seconds")
         time.sleep(600)
 
 
-def getProfile():
+def get_profile():
     api = POEApi()
     appLogger.debug("Retrieving the profile")
     return api.getProfile()
 
 
-def getLeagues():
+def get_leagues():
     api = POEApi()
     leagues = set()
     appLogger.debug("Retrieving the leagues list")
@@ -71,7 +78,7 @@ def getLeagues():
     return leagues
 
 
-def getStashIds(league):
+def get_stash_ids(league):
     api = POEApi()
     appLogger.debug("Retrieving the stashes list for %s", league)
     stashes = api.getStashTabsList(league).get("stashes", [])
@@ -90,6 +97,19 @@ def getStashIds(league):
     appLogger.info("Retrieved the available stashes list for %s : %s", str(league), str(stashIds))
     return stashIds
 
+def write_stash_to_file(stash):
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    filename = f"{stash[0]['stash']['id']}_{timestamp}.json"
+    with open(f"{os.path.dirname(sys.argv[0])}/data/{filename}", "w") as file:
+        json.dump(stash, file)
+    appLogger.info("Saved the '%s' tab data in %s", stash[0]['stash']['id'], filename)
+
+def send_stash_to_server(stash):
+    conf = cfg.loadConfig()
+    mainEndpoint = conf["export"]["endpoint"]
+    response = requests.post(f"{mainEndpoint}/api/UpdateCompleteStashContent/{stash[0]['stash']['id']}", json=stash)
+    if response.status_code != 200:
+        appLogger.error("POST request failed with status code:", response.status_code)
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:

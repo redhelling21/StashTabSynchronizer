@@ -1,6 +1,7 @@
 {
     "recommendations": [
         "ms-python.python",
-        "spmeesseman.vscode-taskexplorer"
+        "spmeesseman.vscode-taskexplorer",
+        "ms-python.black-formatter"
     ]
 }
