@@ -4,6 +4,7 @@ availableLeagues:
   - Crucible
   - Hardcore
 league: Standard
+exportInterval: 1200
 specialStashesHandling:
   unique: full
   # Don't switch to full

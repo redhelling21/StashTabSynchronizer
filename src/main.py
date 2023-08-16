@@ -15,7 +15,7 @@ systrayHandler = None
 
 
 def startup():
-    systrayHandler = systray.run_systray()
+    # systrayHandler = systray.run_systray() # to handle systray icon
     profile = get_profile()
     leagues = get_leagues()
     selectedLeague = cfg.loadConfig().get("league")
@@ -52,8 +52,8 @@ def loop(league, stashIds, owner):
                 stashExport(formattedStash)
             else:
                 appLogger.info("Stash '%s' was empty, skipping", stashIds[id])
-        appLogger.info("Sleeping for 600 seconds")
-        time.sleep(600)
+        appLogger.info(f"Sleeping for {conf['exportInterval']} seconds")
+        time.sleep(conf["exportInterval"])
 
 
 def get_profile():
@@ -108,7 +108,7 @@ def send_stash_to_server(stash):
     conf = cfg.loadConfig()
     mainEndpoint = conf["export"]["endpoint"]
     response = requests.post(f"{mainEndpoint}/api/Stashs/UpdateCompleteStashContent/{stash[0]['stash']['id']}", json=stash, verify=False)
-    if response.status_code > 300:
+    if response.status_code >= 300:
         appLogger.error("POST request failed with status code:", response.status_code)
 
 if __name__ == "__main__":
