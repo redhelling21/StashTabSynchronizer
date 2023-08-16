@@ -15,9 +15,9 @@ class POEApi:
             if self.maxWaitingNeeded > 0:
                 appLogger.info(f"Detected the need of a temporisation. Waiting {self.maxWaitingNeeded}s")
                 time.sleep(self.maxWaitingNeeded)
-            elif self.mostCloseToBreakingRule[0] < 3:
-                appLogger.info(f"Hit counts before rate limiting goes low. Waiting {self.mostCloseToBreakingRule[1] / 2}s")
-                time.sleep(self.mostCloseToBreakingRule[1] / 2)
+            elif self.mostCloseToBreakingRule[0] < 2:
+                appLogger.info(f"The rate limit is near. Waiting {self.mostCloseToBreakingRule[1]}s to avoid it.")
+                time.sleep(self.mostCloseToBreakingRule[1])
             result = func(self, *args, **kwargs)
             resHeaders = result.headers
             if result.status_code == 429:

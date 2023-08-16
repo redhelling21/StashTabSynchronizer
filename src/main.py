@@ -22,6 +22,7 @@ def startup():
     if selectedLeague is not None and selectedLeague in leagues:
         appLogger.info("Running with league : " + selectedLeague)
         stashIds = get_stash_ids(selectedLeague)
+        appLogger.info(f"Found {len(stashIds)} stashes")
         loop(selectedLeague, stashIds, profile["name"])
     else:
         appLogger.info("No selected league. Exiting...")
@@ -39,9 +40,11 @@ def loop(league, stashIds, owner):
         appLogger.info("Invalid export mode. Exiting...")
         return
     while True:
-        appLogger.info("Retrieving the stash tabs datas")
+        appLogger.info(f"Reading datas from {len(stashIds)} stash tabs")
+        count = 1
         for id in stashIds:
-            appLogger.debug("Querying the stash %s, with id %s", stashIds[id], id)
+            appLogger.info(f"Reading tab {count}/{len(stashIds)} ({stashIds[id]})...")
+            appLogger.debug("Reading tab %s, with id %s", stashIds[id], id)
             stash = api.getStashTab(league, id)
             try:
                 formattedStash = stashFormatter.getFormattedStash(stash, owner, league)
@@ -52,6 +55,7 @@ def loop(league, stashIds, owner):
                 stashExport(formattedStash)
             else:
                 appLogger.info("Stash '%s' was empty, skipping", stashIds[id])
+            count += 1
         appLogger.info("*********************************************************")
         appLogger.info(f"Export finished. Sleeping for {conf['exportInterval']} seconds")
         appLogger.info("*********************************************************")
@@ -60,14 +64,14 @@ def loop(league, stashIds, owner):
 
 def get_profile():
     api = POEApi()
-    appLogger.debug("Retrieving the profile")
+    appLogger.debug("Reading the profile")
     return api.getProfile()
 
 
 def get_leagues():
     api = POEApi()
     leagues = set()
-    appLogger.debug("Retrieving the leagues list")
+    appLogger.debug("Reading the leagues list")
     characters = api.getCharacters().get("characters", [])
     for character in characters:
         league = character.get("league")
@@ -76,13 +80,13 @@ def get_leagues():
     conf = cfg.loadConfig()
     conf["availableLeagues"] = list(leagues)
     cfg.dumpConfig(conf)
-    appLogger.info("Retrieved the available leagues list : %s", str(leagues))
+    appLogger.info("Got the available leagues list : %s", str(leagues))
     return leagues
 
 
 def get_stash_ids(league):
     api = POEApi()
-    appLogger.debug("Retrieving the stashes list for %s", league)
+    appLogger.debug("Getting the stashes list for %s", league)
     stashes = api.getStashTabsList(league).get("stashes", [])
     stashIds = {}
     for stash in stashes:
@@ -96,7 +100,6 @@ def get_stash_ids(league):
             id = stash.get("id")
             if id:
                 stashIds[id] = stash.get("name")
-    appLogger.info("Retrieved the available stashes list for %s : %s", str(league), str(stashIds))
     return stashIds
 
 def write_stash_to_file(stash):

@@ -264,7 +264,7 @@ def getFormattedStash(json, owner, league):
         elif stash.get("type") == "UniqueStash":
             items = unique_stash_handler(league, stash, children)
         else:
-            appLogger.debug("Detected children from an unknown stash type, retrieving substashes")
+            appLogger.debug("Detected children from an unknown stash type, reading substashes")
             for child in children:
                 appLogger.debug(f"Querying child {stash['id']}/{child['id']}")
                 childStash = api.getStashTab(league, f"{stash['id']}/{child['id']}")

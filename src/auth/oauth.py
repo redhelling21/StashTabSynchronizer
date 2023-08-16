@@ -92,7 +92,7 @@ def get_new_token(code):
     appLogger.debug("Calling %s", tokenUrl)
     response = requests.get(tokenUrl)
     if response.status_code != 200:
-        appLogger.error("Failed to retrieve token: %s", response.text)
+        appLogger.error("Failed to get token: %s", response.text)
     appLogger.info("Acquired the token %s", str(response.json()))
     return response.json()
 

@@ -5,6 +5,7 @@ availableLeagues:
   - Hardcore
 league: Standard
 exportInterval: 1200
+logLevel: 20
 specialStashesHandling:
   unique: full
   # Don't switch to full

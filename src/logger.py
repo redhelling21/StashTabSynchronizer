@@ -3,6 +3,9 @@ from logging.handlers import RotatingFileHandler
 from confighandler import config as cfg
 import sys
 import os
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 LOG_LEVEL = cfg.loadConfig().get("logLevel", logging.DEBUG)
 CURRENT_PATH = os.path.dirname(sys.argv[0])
