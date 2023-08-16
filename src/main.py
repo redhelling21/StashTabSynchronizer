@@ -107,8 +107,8 @@ def write_stash_to_file(stash):
 def send_stash_to_server(stash):
     conf = cfg.loadConfig()
     mainEndpoint = conf["export"]["endpoint"]
-    response = requests.post(f"{mainEndpoint}/api/UpdateCompleteStashContent/{stash[0]['stash']['id']}", json=stash)
-    if response.status_code != 200:
+    response = requests.post(f"{mainEndpoint}/api/Stashs/UpdateCompleteStashContent/{stash[0]['stash']['id']}", json=stash, verify=False)
+    if response.status_code > 300:
         appLogger.error("POST request failed with status code:", response.status_code)
 
 if __name__ == "__main__":

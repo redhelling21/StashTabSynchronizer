@@ -3,7 +3,7 @@ availableLeagues:
   - Standard
   - Crucible
   - Hardcore
-league: Crucible
+league: Standard
 specialStashesHandling:
   unique: full
   # Don't switch to full
@@ -15,5 +15,5 @@ oauth:
   scope: account:stashes account:profile account:characters
   tokenTemplate: https://next.exilence.app/api/authentication/oauth2?code={CODE}
 export:
-  mode: local
-  endpoint: data
+  mode: server
+  endpoint: https://localhost:7017

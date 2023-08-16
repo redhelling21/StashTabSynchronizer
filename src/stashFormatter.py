@@ -100,7 +100,7 @@ def nested_values_handler(item, value, comparableCatName, searchableCatName, han
                         item[searchableCatName].append(newReq)
                 # Case where there is zero value
                 else:
-                    newReq["value"] = newReq["name"]
+                    newReq["value"] = "True"
                     item[searchableCatName].append(newReq)
             # Case where there is two values
             else:
@@ -127,7 +127,7 @@ def mod_values_handler(item, value, comparableCatName, searchableCatName):
             newProp = newProp.replace(number, "X", 1)
         newMod["name"] = newProp
         if len(numbers) == 0:
-            newMod["value"] = newProp
+            newMod["value"] = "True"
             item[searchableCatName].append(newMod)
         elif len(numbers) == 1:
             if is_number(numbers[0]):
