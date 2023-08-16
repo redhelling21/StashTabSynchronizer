@@ -52,7 +52,9 @@ def loop(league, stashIds, owner):
                 stashExport(formattedStash)
             else:
                 appLogger.info("Stash '%s' was empty, skipping", stashIds[id])
-        appLogger.info(f"Sleeping for {conf['exportInterval']} seconds")
+        appLogger.info("*********************************************************")
+        appLogger.info(f"Export finished. Sleeping for {conf['exportInterval']} seconds")
+        appLogger.info("*********************************************************")
         time.sleep(conf["exportInterval"])
 
 
