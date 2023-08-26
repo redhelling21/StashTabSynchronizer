@@ -51,7 +51,7 @@ def loop(league, stashIds, owner):
             except Exception as e:
                 appLogger.exception("An exception occurred while formatting stash: %s", str(e))
                 formattedStash = None
-            if formattedStash is not None:
+            if formattedStash:
                 stashExport(formattedStash)
             else:
                 appLogger.info("Stash '%s' was empty, skipping", stashIds[id])
@@ -102,12 +102,14 @@ def get_stash_ids(league):
                 stashIds[id] = stash.get("name")
     return stashIds
 
+
 def write_stash_to_file(stash):
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     filename = f"{stash[0]['stash']['id']}_{timestamp}.json"
     with open(f"{os.path.dirname(sys.argv[0])}/data/{filename}", "w") as file:
         json.dump(stash, file)
-    appLogger.info("Saved the '%s' tab data in %s", stash[0]['stash']['id'], filename)
+    appLogger.info("Saved the '%s' tab data in %s", stash[0]["stash"]["id"], filename)
+
 
 def send_stash_to_server(stash):
     conf = cfg.loadConfig()
@@ -115,6 +117,7 @@ def send_stash_to_server(stash):
     response = requests.post(f"{mainEndpoint}/api/Stashs/UpdateCompleteStashContent/{stash[0]['stash']['id']}", json=stash, verify=False)
     if response.status_code >= 300:
         appLogger.error("POST request failed with status code:", response.status_code)
+
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
